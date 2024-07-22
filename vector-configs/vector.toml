@@ -1,34 +1,51 @@
 [api]
-  enabled = true
-  address = "[::]:8686"
+enabled = true
+address = "[::]:8686"
 
 [sources.fly_log_metrics]
-  type = "internal_metrics"
+type = "internal_metrics"
 
 [sources.nats]
-  type = "nats"
-  url = "nats://[${NETWORK-fdaa}::3]:4223"
-  queue = "${QUEUE-}"
-  subject = "${SUBJECT-logs.>}"
-  auth.strategy = "user_password"
-  auth.user_password.user = "${ORG-personal}"
-  auth.user_password.password = "${ACCESS_TOKEN?}"
-  connection_name = "Fly logs stream"
+type = "nats"
+url = "nats://[${NETWORK-fdaa}::3]:4223"
+queue = "${QUEUE-}"
+subject = "${SUBJECT-logs.>}"
+auth.strategy = "user_password"
+auth.user_password.user = "${ORG-personal}"
+auth.user_password.password = "${ACCESS_TOKEN?}"
+connection_name = "Fly logs stream"
 
-[transforms.log_json]
-  type = "remap"
-  inputs = ["nats"]
-  source = '''
+# Fly log first arrive as JSON in string form so convert these to JSON:
+[transforms.fly_log_json]
+type = "remap"
+inputs = ["nats"]
+reroute_dropped = true
+source = '''
   . = parse_json!(.message)
   '''
 
+# Cepro messages are embedded in '.message' which needs a separate parse to json:
+[transforms.log_json]
+type = "remap"
+inputs = ["fly_log_json"]
+reroute_dropped = true
+source = '''
+  if .fly.app.name == "simt-scheduler-polished-mountain-8705" {
+    # scheduler uses supercronic which logs in logfmt:
+    .message = parse_logfmt!(.message)
+  } else if is_json(.message) ?? false {
+    # most of the other logging is in JSON so if it parse it otherwise it will stay a string
+    .message = parse_json!(.message)
+  }
+'''
+
 [sinks.fly_log_metrics_prometheus]
-  type = "prometheus_exporter" # required
-  inputs = ["fly_log_metrics"] # required
-  address = "[::]:9598" # required
-  default_namespace = "fly-logs" # optional, no default
+type = "prometheus_exporter"   # required
+inputs = ["fly_log_metrics"]   # required
+address = "[::]:9598"          # required
+default_namespace = "fly-logs" # optional, no default
 
 [sinks.blackhole]
-  type = "blackhole"
-  inputs = ["log_json"]
-  print_interval_secs = 100000
+type = "blackhole"
+inputs = ["log_json"]
+print_interval_secs = 10000

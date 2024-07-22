@@ -1,5 +1,26 @@
-app = "fly-log-shipper-example"
+# fly.toml app configuration file generated for simt-fly-log-shipper on 2024-01-22T18:55:47+10:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-[metrics]
-  port = 9598
-  path = "/metrics"
+app = "simt-fly-log-shipper"
+primary_region = "lhr"
+
+[env]
+ORG = "cepro"
+LOKI_URL = "https://logs-prod-006.grafana.net"
+PAPERTRAIL_ENDPOINT = 'https://logs3.papertrailapp.com:23124'
+
+[[services]]
+protocol = 'tcp'
+internal_port = 8686
+processes = ['app']
+
+[[services.ports]]
+port = 31234
+handlers = ["http"]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 256
