@@ -34,7 +34,7 @@ source = '''
     # scheduler uses supercronic which logs in logfmt:
     .message = parse_logfmt!(.message)
   } else if is_json(.message) ?? false {
-    # most of the other logging is in JSON so if it parse it otherwise it will stay a string
+    # most of the other logging is in JSON in .message. if so parse it otherwise it will stay a string
     .message = parse_json!(.message)
   }
 '''
