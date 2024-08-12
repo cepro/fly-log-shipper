@@ -1,0 +1,40 @@
+[api]
+enabled = true
+
+[sources.file_in]
+type = "file"
+include = [ "/messages.log" ]
+
+[sinks.out]
+type = "console"
+inputs = [ "cepro_message_to_json" ]
+encoding.codec = "text"
+
+# [transforms.filter_sched]
+# type = "filter"
+# condition = '.fly.app.name == "simt-scheduler-polished-mountain-8705"'
+# inputs = ["nats"]
+
+# Fly log first arrive as JSON in string form so convert these to JSON:
+[transforms.fly_log_str_to_json]
+type = "remap"
+inputs = ["file_in"]
+reroute_dropped = true
+source = '''
+  . = parse_json!(.message)
+  '''
+
+# Cepro messages are embedded in '.message' which needs a separate parse to json:
+[transforms.cepro_message_to_json]
+type = "remap"
+inputs = ["fly_log_str_to_json"]
+reroute_dropped = true
+source = '''
+  if .fly.app.name == "simt-scheduler-polished-mountain-8705" {
+    # scheduler uses supercronic which logs in logfmt:
+    .message = parse_logfmt!(.message)
+  } else if is_json(.message) ?? false {
+    # most of the other logging is in JSON so if it parse it otherwise it will stay a string
+    .message = parse_json!(.message)
+  }
+'''

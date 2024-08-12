@@ -4,4 +4,4 @@ see [README](https://github.com/superfly/fly-log-shipper) in the repository this
 
 This fork adds some custom transformations to logs coming out of our fly apps to ensure all output logs are in a structured JSON format.
 
-See our modified [vector.toml](https://github.com/cepro/fly-log-shipper/blob/main/vector-configs/vector.toml) for details.
+See our modified [vector.toml](https://github.com/cepro/fly-log-shipper/blob/main/vector-config/vector.toml) for details.
