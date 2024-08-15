@@ -21,10 +21,6 @@
   auth.password = "${LOKI_PASSWORD}"
   encoding.codec = "json"
 
-  labels.event_provider = "{{event.provider}}"
-  labels.fly_region = "{{fly.region}}"
-  labels.fly_app_name = "{{fly.app.name}}"
-  labels.fly_app_instance = "{{fly.app.instance}}"
-  labels.host = "{{host}}"
+  labels.app = "{{app}}"
   labels.level = "{{level}}"
 
