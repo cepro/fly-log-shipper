@@ -15,7 +15,7 @@ auth.user_password.user = "${ORG-personal}"
 auth.user_password.password = "${ACCESS_TOKEN?}"
 connection_name = "Fly logs stream"
 
-[transforms.reshape]
+[transforms.log_json]
 type = "remap"
 inputs = ["nats"]
 source = '''
@@ -54,7 +54,7 @@ inputs = ["fly_log_metrics"]   # required
 address = "[::]:9598"          # required
 default_namespace = "fly-logs" # optional, no default
 
-[sinks.reshape]
+[sinks.blackhole]
 type = "blackhole"
 inputs = ["log_json"]
 print_interval_secs = 10000
