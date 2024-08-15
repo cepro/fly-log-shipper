@@ -15,28 +15,37 @@ auth.user_password.user = "${ORG-personal}"
 auth.user_password.password = "${ACCESS_TOKEN?}"
 connection_name = "Fly logs stream"
 
-# Fly log first arrive as JSON in string form so convert these to JSON:
-[transforms.fly_log_json]
+[transforms.reshape]
 type = "remap"
 inputs = ["nats"]
-reroute_dropped = true
 source = '''
-  . = parse_json!(.message)
-  '''
+fly_log = parse_json!(.message)
+raw_message = fly_log.message
 
-# Cepro messages are embedded in '.message' which needs a separate parse to json:
-[transforms.log_json]
-type = "remap"
-inputs = ["fly_log_json"]
-reroute_dropped = true
-source = '''
-  if .fly.app.name == "simt-scheduler-polished-mountain-8705" {
-    # scheduler uses supercronic which logs in logfmt:
-    .message = parse_logfmt!(.message)
-  } else if is_json(.message) ?? false {
-    # most of the other logging is in JSON in .message. if so parse it otherwise it will stay a string
-    .message = parse_json!(.message)
+app = fly_log.fly.app.name
+
+ret_log = {"message": {"app": app}}
+
+if app == "simt-scheduler-polished-mountain-8705" {
+  message, err_parse_logfmt = parse_logfmt(raw_message)
+  if err_parse_logfmt == null {
+    ret_log.message |= {"message": message.msg, "level": message.level, "timestamp": message.time, "command": get!(message, ["job.command"])}
+  } else {
+    # not in the expected logfmt so log raw message
+    ret_log.message |= {"message": raw_message}
   }
+} else {
+  # most other apps log in JSON:
+  message, err_parse_json = parse_json(raw_message)
+  if err_parse_json == null {
+    ret_log.message |= object!(message)
+  } else {
+    # not in the expected json so log raw message
+    ret_log.message |= {"message": raw_message, "timestamp": fly_log.timestamp}
+  }
+}
+
+. = ret_log
 '''
 
 [sinks.fly_log_metrics_prometheus]
@@ -45,7 +54,7 @@ inputs = ["fly_log_metrics"]   # required
 address = "[::]:9598"          # required
 default_namespace = "fly-logs" # optional, no default
 
-[sinks.blackhole]
+[sinks.reshape]
 type = "blackhole"
 inputs = ["log_json"]
 print_interval_secs = 10000
