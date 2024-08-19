@@ -26,9 +26,9 @@ app = fly_log.fly.app.name
 
 ret_log = {"message": {"app": app}}
 
-if app == "simt-scheduler-polished-mountain-8705" {
+if app == "simt-scheduler" {
   message, err_parse_logfmt = parse_logfmt(raw_message)
-  if err_parse_logfmt == null {
+  if err_parse_logfmt == null && message.msg != null {
     ret_log.message |= {"message": message.msg, "level": message.level, "timestamp": message.time, "command": get!(message, ["job.command"])}
   } else {
     # not in the expected logfmt so log raw message
