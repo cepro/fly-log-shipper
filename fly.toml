@@ -8,7 +8,7 @@ primary_region = "lhr"
 
 [env]
 ORG = "cepro"
-LOKI_URL = "https://logs-prod-006.grafana.net"
+HTTP_URL = "https://logs-prod-006.grafana.net/loki/api/v1/push"
 PAPERTRAIL_ENDPOINT = 'https://logs3.papertrailapp.com:23124'
 
 [[services]]

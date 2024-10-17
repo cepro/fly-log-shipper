@@ -11,7 +11,7 @@ url = "nats://[${NETWORK-fdaa}::3]:4223"
 queue = "${QUEUE-}"
 subject = "${SUBJECT-logs.>}"
 auth.strategy = "user_password"
-auth.user_password.user = "${ORG-personal}"
+auth.user_password.user = "${ORG-cepro}"
 auth.user_password.password = "${ACCESS_TOKEN?}"
 connection_name = "Fly logs stream"
 
