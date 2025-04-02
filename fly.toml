@@ -4,7 +4,7 @@
 #
 
 app = "simt-fly-log-shipper"
-primary_region = "lhr"
+primary_region = "ams"
 
 [env]
 ORG = "cepro"
