@@ -1,0 +1,13 @@
+app = 'fly-log-shipper-bec'
+primary_region = 'lhr'
+
+[build]
+  ignorefile = ".dockerignore.bec"
+
+[env]
+  ORG = 'bristolenergy'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256

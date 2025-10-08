@@ -1,0 +1,13 @@
+app = 'simt-fly-log-shipper'
+primary_region = 'ams'
+
+[build]
+  ignorefile = ".dockerignore.cepro"
+
+[env]
+  ORG = 'cepro'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256

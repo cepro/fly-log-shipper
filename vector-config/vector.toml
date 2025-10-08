@@ -25,7 +25,7 @@ raw_message = fly_log.message
 app = to_string(fly_log.fly.app.name) ?? ""
 
 # Skip processing logs from the log shipper itself to prevent feedback loops
-if starts_with(app, "fly-log-shipper") {
+if starts_with(app, "fly-log-shipper") || app == "simt-fly-log-shipper" {
   abort
 }
 
@@ -59,7 +59,7 @@ inputs = ["fly_log_metrics"]   # required
 address = "[::]:9598"          # required
 default_namespace = "fly-logs" # optional, no default
 
-[sinks.blackhole]
-type = "blackhole"
+[sinks.console]
+type = "console"
 inputs = ["log_json"]
-print_interval_secs = 10000
+encoding.codec = "json"
