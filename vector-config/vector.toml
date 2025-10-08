@@ -22,11 +22,16 @@ source = '''
 fly_log = parse_json!(.message)
 raw_message = fly_log.message
 
-app = fly_log.fly.app.name
+app = to_string(fly_log.fly.app.name) ?? ""
+
+# Skip processing logs from the log shipper itself to prevent feedback loops
+if starts_with(app, "fly-log-shipper") {
+  abort
+}
 
 ret_log = {"message": {"app": app}}
 
-if app == "simt-scheduler" {
+if starts_with(app, "simt-scheduler") {
   message, err_parse_logfmt = parse_logfmt(raw_message)
   if err_parse_logfmt == null && message.msg != null {
     ret_log.message |= {"message": message.msg, "level": message.level, "timestamp": message.time, "command": get!(message, ["job.command"])}
