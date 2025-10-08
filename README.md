@@ -9,17 +9,10 @@ See our modified [vector.toml](https://github.com/cepro/fly-log-shipper/blob/mai
 ## Launch
 
 ```sh
-# create fly.toml - edit and set env variables
-cp fly.example.toml fly.toml
+fly launch --config fly/fly-<org>.toml --org <org> --no-public-ips --no-deploy --name fly-log-shipper-<org>
 
-fly launch --org <org> --no-public-ips --no-deploy --name fly-log-shipper-<org>
+fly secrets --config fly/fly-<org>.toml set ACCESS_TOKEN=$(fly auth token)
 
-# remove http_service section created by fly and redeploy
-#   couldn't see a command line option to achieve this on launch ... 
-vim fly.toml
-
-fly secrets set ACCESS_TOKEN=$(fly auth token)
-
-fly deploy
-fly scale count 1
+fly deploy --config fly/fly-<org>.toml
+fly scale --config fly/fly-<org>.toml count 1
 ```
