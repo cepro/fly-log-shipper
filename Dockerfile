@@ -1,4 +1,4 @@
-FROM timberio/vector:0.48.0-debian
+FROM timberio/vector:0.50.0-debian
 
 # remove preinstalled configuration
 RUN rm -rf /etc/vector/vector.yaml /etc/vector/examples
