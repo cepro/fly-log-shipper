@@ -1,0 +1,29 @@
+[transforms.loki_json]
+  type = "remap"
+  inputs = ["log_json"]
+  source = '''
+  .level = .log.level
+  if starts_with(.message, "{") ?? false {
+    # parse json messages
+    json = object!(parse_json!(.message))
+    del(.message)
+    . |= json
+  }
+  '''
+
+[sinks.loki]
+  type = "loki"
+  inputs = ["loki_json"]
+  endpoint = "https://logs-prod-025.grafana.net"
+  compression = "gzip"
+  auth.strategy = "basic"
+  auth.user = "1045245"
+  auth.password = "${GRAFANA_LOKI_PASSWORD}"
+  encoding.codec = "json"
+
+  labels.event_provider = "{{event.provider}}"
+  labels.fly_region = "{{fly.region}}"
+  labels.fly_app_name = "{{fly.app.name}}"
+  labels.fly_app_instance = "{{fly.app.instance}}"
+  labels.host = "{{host}}"
+  labels.level = "{{level}}"

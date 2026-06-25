@@ -1,9 +1,0 @@
-[sinks.http]
-  type = "http"
-  inputs = ["log_json"]
-  uri = "${HTTP_URL}"
-  method = "post"
-  encoding.codec = "json"
-  auth.strategy = "basic"
-  auth.user = "${HTTP_USER}"
-  auth.password = "${HTTP_PASSWORD}"
