@@ -1,0 +1,44 @@
+name: ci
+
+on: push
+
+env:
+  # Vector image tag - must match the FROM line in Dockerfile
+  VECTOR_VERSION: 0.56.0-debian
+
+  # Fake values - validate --no-environment and test don't actually connect anywhere,
+  # but Vector still interpolates these at config-load time.
+  ACCESS_TOKEN: fake
+  GRAFANA_LOKI_PASSWORD: fake
+  PAPERTRAIL_ENDPOINT: "fake.example.com:1234"
+
+jobs:
+  vector:
+    name: vector validate + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Schema and interpolation check. --no-environment skips component health
+      # checks (e.g. NATS connect) so we don't need real credentials/services.
+      - name: Validate Vector config
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/src \
+            timberio/vector:${{ env.VECTOR_VERSION }} \
+            validate --no-environment \
+              /src/vector-config/vector.toml \
+              /src/vector-config/sinks/loki.toml \
+              /src/vector-config/sinks/papertrail.toml
+
+      # Unit tests pin the loki-label contract and the self-log abort.
+      # Test framework injects synthetic events; no real NATS or loki required.
+      - name: Run Vector unit tests
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/src \
+            timberio/vector:${{ env.VECTOR_VERSION }} \
+            test \
+              /src/vector-config/vector.toml \
+              /src/vector-config/sinks/loki.toml \
+              /src/tests/vector-tests.toml
