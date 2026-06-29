@@ -1,0 +1,31 @@
+# TEMPLATE: copy to vector-config/sinks/capture.toml and redeploy
+# when you need to regenerate the test-fixtures/captured-mgf.jsonl file.
+#
+# REMOVE the copy from vector-config/sinks/ when done - this is not
+# production config and the self-log abort below will silently drop the
+# log shipper's own logs, which is the only thing stopping the feedback
+# loop from flooding the sample transform.
+
+[transforms.capture_sample]
+type = "sample"
+inputs = ["nats"]
+rate = 1
+
+# drop the log shipper's own logs (would otherwise feedback-loop via stdout)
+[transforms.capture_filter]
+type = "remap"
+inputs = ["capture_sample"]
+source = '''
+parsed, err = parse_json(.message)
+if err == null {
+  app = to_string(parsed.fly.app.name) ?? ""
+  if starts_with(app, "fly-log-shipper") || app == "simt-fly-log-shipper" {
+    abort
+  }
+}
+'''
+
+[sinks.capture_console]
+type = "console"
+inputs = ["capture_filter"]
+encoding.codec = "json"

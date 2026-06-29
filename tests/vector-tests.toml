@@ -1,0 +1,98 @@
+# Unit tests for the log_json and loki_json transforms.
+#
+# Test fixtures sourced from test-fixtures/captured-mgf.jsonl (sanitised).
+# The tests below are hand-transcribed subsets of those fixtures.
+#
+# Run with:
+#   docker run --rm -v '$(pwd)':/src -w /src \
+#     -e ACCESS_TOKEN=fake -e GRAFANA_LOKI_PASSWORD=fake \
+#     timberio/vector:0.56.0-debian \
+#     test /src/vector-config/vector.toml \
+#          /src/vector-config/sinks/loki.toml \
+#          /src/tests/vector-tests.toml
+#
+# The loki-label bug: loki sink uses fly.app.name, fly.region, host, level
+# labels, but log_json used to strip the Fly envelope (fly/host/log) when it
+# did . = ret_log. These tests pin the envelope-preservation contract.
+
+[[tests]]
+name = "log_json_preserves_fly_envelope_raw_nginx_message"
+  [[tests.inputs]]
+  insert_at = "log_json"
+  type = "log"
+  log_fields.message = '{"event":{"provider":"app"},"fly":{"app":{"instance":"inst-000","name":"supabase-kong-mgf","process_group":"app"},"region":"lhr","zone":"zone-000"},"host":"host-000","log":{"level":"info"},"message":"2026/06/29 01:25:58 [info] 1756#0: *34452726 client closed connection while waiting for request, client: 10.0.0.1, server: 0.0.0.0:8000","timestamp":"2026-06-29T01:25:58.849817395Z"}'
+  log_fields.source_type = "nats"
+  log_fields.subject = "logs.>"
+  log_fields.timestamp = "2026-06-29T01:25:58.851494478Z"
+
+  [[tests.outputs]]
+  extract_from = "log_json"
+    [[tests.outputs.conditions]]
+    type = "vrl"
+    source = '''
+    assert_eq!(.message.app, "supabase-kong-mgf")
+    assert!(exists(.fly), "fly envelope must be preserved for loki labels")
+    assert_eq!(.fly.app.name, "supabase-kong-mgf")
+    assert_eq!(.fly.region, "lhr")
+    assert!(exists(.host), "host must be preserved for loki label")
+    assert!(exists(.log), "log envelope must be preserved for loki_json to read .log.level")
+    assert_eq!(.log.level, "info")
+    '''
+
+[[tests]]
+name = "log_json_preserves_fly_envelope_simt_scheduler_logfmt"
+  [[tests.inputs]]
+  insert_at = "log_json"
+  type = "log"
+  log_fields.message = '{"event":{"provider":"app"},"fly":{"app":{"instance":"inst-002","name":"simt-scheduler-mgf","process_group":"app"},"region":"lhr","zone":"zone-002"},"host":"host-002","log":{"level":"info"},"message":"time=\"2026-06-29T01:25:59Z\" level=info msg=starting iteration=205780 job.command=\"poetry run python /scripts/process_notifications_outbox.py\"","timestamp":"2026-06-29T01:25:59.963640178Z"}'
+  log_fields.source_type = "nats"
+  log_fields.subject = "logs.>"
+  log_fields.timestamp = "2026-06-29T01:25:59.963640178Z"
+
+  [[tests.outputs]]
+  extract_from = "log_json"
+    [[tests.outputs.conditions]]
+    type = "vrl"
+    source = '''
+    assert_eq!(.message.app, "simt-scheduler-mgf")
+    assert!(exists(.fly), "fly envelope must be preserved")
+    assert_eq!(.fly.app.name, "simt-scheduler-mgf")
+    assert!(exists(.log), "log envelope must be preserved")
+    # existing behaviour: simt-scheduler logfmt gets parsed
+    assert_eq!(.message.message, "starting")
+    assert_eq!(.message.command, "poetry run python /scripts/process_notifications_outbox.py")
+    '''
+
+[[tests]]
+name = "log_json_aborts_for_self_logs"
+  no_outputs_from = ["log_json"]
+
+  [[tests.inputs]]
+  insert_at = "log_json"
+  type = "log"
+  log_fields.message = '{"event":{"provider":"app"},"fly":{"app":{"instance":"inst-005","name":"fly-log-shipper-mgf","process_group":"app"},"region":"lhr","zone":"zone-004"},"host":"host-004","log":{"level":"info"},"message":"vector has started","timestamp":"2026-06-29T01:25:58Z"}'
+  log_fields.source_type = "nats"
+  log_fields.subject = "logs.>"
+
+[[tests]]
+name = "loki_json_sets_level_from_log_envelope"
+  # Input is what log_json would emit with the fix in place: .log.level exists
+  [[tests.inputs]]
+  insert_at = "loki_json"
+  type = "log"
+  log_fields.message.app = "supabase-kong-mgf"
+  log_fields.message.message = "2026/06/29 01:25:58 [info] nginx line"
+  log_fields.message.timestamp = "2026-06-29T01:25:58Z"
+  log_fields.fly = { app = { instance = "inst-000", name = "supabase-kong-mgf" }, region = "lhr" }
+  log_fields.host = "host-000"
+  log_fields.log = { level = "info" }
+
+  [[tests.outputs]]
+  extract_from = "loki_json"
+    [[tests.outputs.conditions]]
+    type = "vrl"
+    source = '''
+    assert_eq!(.level, "info")
+    assert_eq!(.fly.app.name, "supabase-kong-mgf")
+    assert_eq!(.host, "host-000")
+    '''

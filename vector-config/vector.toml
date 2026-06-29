@@ -50,6 +50,12 @@ if starts_with(app, "simt-scheduler") {
   }
 }
 
+# Preserve the Fly envelope so loki sink labels (fly.app.name, fly.region,
+# host, level) can render. The loki_json transform reads .log.level from here.
+ret_log.fly  = fly_log.fly
+ret_log.host = fly_log.host
+ret_log.log  = fly_log.log
+
 . = ret_log
 '''
 
