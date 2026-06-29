@@ -6,8 +6,10 @@ env:
   # Vector image tag - must match the FROM line in Dockerfile
   VECTOR_VERSION: 0.56.0-debian
 
-  # Fake values - validate --no-environment and test don't actually connect anywhere,
-  # but Vector still interpolates these at config-load time.
+  # Fake values - validate --no-environment and test don't actually connect
+  # anywhere, but Vector still interpolates these at config-load time.
+  # Passed into the docker container via `-e VAR` flags below (docker does
+  # NOT inherit the runner's env automatically).
   ACCESS_TOKEN: fake
   GRAFANA_LOKI_PASSWORD: fake
   PAPERTRAIL_ENDPOINT: "fake.example.com:1234"
@@ -25,6 +27,9 @@ jobs:
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/src \
+            -e ACCESS_TOKEN \
+            -e GRAFANA_LOKI_PASSWORD \
+            -e PAPERTRAIL_ENDPOINT \
             timberio/vector:${{ env.VECTOR_VERSION }} \
             validate --no-environment \
               /src/vector-config/vector.toml \
@@ -37,6 +42,8 @@ jobs:
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/src \
+            -e ACCESS_TOKEN \
+            -e GRAFANA_LOKI_PASSWORD \
             timberio/vector:${{ env.VECTOR_VERSION }} \
             test \
               /src/vector-config/vector.toml \
