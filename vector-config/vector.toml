@@ -8,7 +8,7 @@ type = "internal_metrics"
 [sources.nats]
 type = "nats"
 url = "nats://[${NETWORK-fdaa}::3]:4223"
-queue = "${QUEUE-}"
+queue = "${QUEUE-fly-logs}"
 subject = "${SUBJECT-logs.>}"
 auth.strategy = "user_password"
 auth.user_password.user = "${ORG-cepro}"

@@ -6,6 +6,7 @@ primary_region = 'lhr'
 [env]
   ORG = 'microgridfoundry'
   PAPERTRAIL_ENDPOINT = 'https://logs3.papertrailapp.com:23124'
+  QUEUE = 'mgf'
 
 [[vm]]
   cpu_kind = 'shared'

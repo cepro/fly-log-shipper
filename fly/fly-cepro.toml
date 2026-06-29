@@ -6,6 +6,7 @@ primary_region = 'ams'
 
 [env]
   ORG = 'cepro'
+  QUEUE = 'cepro'
 
 [[vm]]
   cpu_kind = 'shared'

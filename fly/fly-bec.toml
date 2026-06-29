@@ -6,6 +6,7 @@ primary_region = 'lhr'
 
 [env]
   ORG = 'bristolenergy'
+  QUEUE = 'bec'
 
 [[vm]]
   cpu_kind = 'shared'
